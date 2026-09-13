@@ -168,7 +168,9 @@ class AppState:
         await self.broadcast({"type": "log", "stream": "system", "text": f"Starting {item.url}\n"})
         try:
             command = build_command(item.url, item.config)
-            await self.broadcast({"type": "log", "stream": "system", "text": f"$ {' '.join(command)}\n"})
+            await self.broadcast(
+                {"type": "log", "stream": "system", "text": f"$ {' '.join(redact_command(command))}\n"}
+            )
             self.process = await asyncio.create_subprocess_exec(
                 *command,
                 stdout=asyncio.subprocess.PIPE,
@@ -273,6 +275,20 @@ def build_command(url: str, config: dict[str, Any]) -> list[str]:
         if config.get(key):
             command.extend([f"--{key.replace('_', '-')}", "true"])
     return command
+
+
+def redact_command(command: list[str]) -> list[str]:
+    redacted: list[str] = []
+    redact_next = False
+    for argument in command:
+        if redact_next:
+            redacted.append("***")
+            redact_next = False
+        else:
+            redacted.append(argument)
+        if argument == "--password":
+            redact_next = True
+    return redacted
 
 
 state = AppState()
