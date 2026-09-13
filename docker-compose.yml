@@ -1,0 +1,10 @@
+services:
+  zotify-studio:
+    build: .
+    container_name: zotify-studio
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./music:/app/music
+      - ./config:/app/config
+    restart: unless-stopped
