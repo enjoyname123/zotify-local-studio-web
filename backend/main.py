@@ -429,3 +429,9 @@ async def websocket_logs(websocket: WebSocket) -> None:
     finally:
         async with state.clients_lock:
             state.clients.discard(websocket)
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=int(os.getenv("PORT", "8000")))
