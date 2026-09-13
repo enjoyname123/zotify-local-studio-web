@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import signal
+import subprocess
 import sys
 import uuid
 from contextlib import asynccontextmanager, suppress
@@ -211,8 +212,25 @@ async def stream_output(
         await broadcast({"type": "log", "stream": name, "text": line.decode(errors="replace")})
 
 
-def build_command(url: str, config: dict[str, Any]) -> list[str]:
+def ensure_zotify_installed() -> str | None:
     executable = shutil.which("zotify")
+    if executable:
+        return executable
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "git+https://github.com/zotify-dev/zotify.git"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except subprocess.CalledProcessError:
+        return None
+    return shutil.which("zotify")
+
+
+def build_command(url: str, config: dict[str, Any]) -> list[str]:
+    executable = ensure_zotify_installed() or shutil.which("zotify")
     command = [executable or sys.executable]
     if not executable:
         command.extend(["-m", "zotify"])
