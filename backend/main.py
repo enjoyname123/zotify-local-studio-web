@@ -36,6 +36,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "output": "{artist}/{album}/{track_number} - {song_name}.{ext}",
     "root_path": str(APP_ROOT / "music"),
     "credentials_location": str(CONFIG_DIR / "credentials.json"),
+    "spotify_username": "",
+    "spotify_password": "",
     "download_real_time": False,
     "download_lyrics": False,
     "skip_existing": False,
@@ -56,6 +58,8 @@ class ConfigModel(BaseModel):
     output: str = DEFAULT_CONFIG["output"]
     root_path: str = DEFAULT_CONFIG["root_path"]
     credentials_location: str = DEFAULT_CONFIG["credentials_location"]
+    spotify_username: str = ""
+    spotify_password: str = ""
     download_real_time: bool = False
     download_lyrics: bool = False
     skip_existing: bool = False
@@ -234,6 +238,14 @@ def build_command(url: str, config: dict[str, Any]) -> list[str]:
     command = [executable or sys.executable]
     if not executable:
         command.extend(["-m", "zotify"])
+
+    username = str(config.get("spotify_username") or "").strip()
+    password = str(config.get("spotify_password") or "").strip()
+    if username:
+        command.extend(["--username", username])
+    if password:
+        command.extend(["--password", password])
+
     command.append(url)
     options = {
         "--download-format": config["download_format"],
@@ -334,14 +346,26 @@ async def enqueue(request: QueueRequest) -> dict[str, Any]:
 async def upload_credentials(request: Request, file: UploadFile | None = File(default=None)) -> dict[str, str]:
     destination = CONFIG_DIR / "credentials.json"
 
+    def update_from_payload(payload: dict[str, Any]) -> None:
+        username = str(payload.get("username") or "").strip()
+        password = str(payload.get("password") or "").strip()
+        if username:
+            state.config["spotify_username"] = username
+        if password:
+            state.config["spotify_password"] = password
+        state.config["credentials_location"] = str(destination)
+        state.save_config(state.config)
+
     if file is not None:
         if file.filename != "credentials.json":
             raise HTTPException(status_code=400, detail="Upload a file named credentials.json")
         content = await file.read()
         try:
-            json.loads(content)
+            parsed = json.loads(content)
         except json.JSONDecodeError as exc:
             raise HTTPException(status_code=400, detail="credentials.json must contain valid JSON") from exc
+        if isinstance(parsed, dict):
+            update_from_payload(parsed)
         destination.write_bytes(content)
         state.config["credentials_location"] = str(destination)
         state.save_config(state.config)
@@ -355,14 +379,17 @@ async def upload_credentials(request: Request, file: UploadFile | None = File(de
     raw_text = payload.credentials_json.strip() if payload.credentials_json else ""
     if raw_text:
         try:
-            json.loads(raw_text)
+            parsed = json.loads(raw_text)
         except json.JSONDecodeError as exc:
             raise HTTPException(status_code=400, detail="credentials JSON paste must contain valid JSON") from exc
+        if isinstance(parsed, dict):
+            update_from_payload(parsed)
         content = raw_text.encode("utf-8")
     elif payload.username or payload.password:
         if not payload.username or not payload.password:
             raise HTTPException(status_code=400, detail="Username and password are both required")
         content = json.dumps({"username": payload.username.strip(), "password": payload.password.strip()}).encode("utf-8")
+        update_from_payload({"username": payload.username.strip(), "password": payload.password.strip()})
     else:
         raise HTTPException(status_code=400, detail="Provide username/password or credentials JSON")
 

@@ -44,6 +44,10 @@
       </div></section>
       <section class="rounded-2xl border border-studio-line bg-studio-card p-5"><h2 class="mb-5 text-lg font-medium">Metadata & credentials</h2><div class="space-y-4">
         <label class="text-sm text-studio-muted">Credentials location<input data-config="credentials_location" class="mt-2 w-full rounded-xl border border-studio-line bg-studio-bg px-3 py-2.5 font-mono text-xs"></label>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="text-sm text-studio-muted">Spotify username<input data-config="spotify_username" class="mt-2 w-full rounded-xl border border-studio-line bg-studio-bg px-3 py-2.5"></label>
+          <label class="text-sm text-studio-muted">Spotify password<input data-config="spotify_password" type="password" class="mt-2 w-full rounded-xl border border-studio-line bg-studio-bg px-3 py-2.5"></label>
+        </div>
         <label class="flex cursor-pointer items-center justify-between rounded-xl border border-studio-line bg-studio-bg p-3 text-sm">Upload credentials.json<input id="credentials" type="file" accept=".json" class="w-44 text-xs text-studio-muted"></label>
         <div class="grid gap-3 sm:grid-cols-2"><label class="text-sm text-studio-muted">Transcode bitrate<input data-config="transcode_bitrate" type="number" min="1" placeholder="Optional" class="mt-2 w-full rounded-xl border border-studio-line bg-studio-bg px-3 py-2.5"></label><label class="text-sm text-studio-muted">Chunk size<input data-config="chunk_size" type="number" class="mt-2 w-full rounded-xl border border-studio-line bg-studio-bg px-3 py-2.5"></label></div>
       </div></section>
